@@ -1,0 +1,10 @@
+.venv/
+
+bin/
+
+META-INF/
+
+*.aird
+*.genmodel
+.classpath
+.project
