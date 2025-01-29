@@ -123,7 +123,7 @@ def addConstraints(domain, m2model):
     connectionClass = domain.Do(Get(Qry(m2model).Pth(M2PACKAGE.CLASSES)
                                     .Sel(Pth(M2CLASS.NAME).Equ('Connection')).Idx(0)))
     connectionConstraint = ser.SerQry(Pth('start').Neq(Pth('end')))
-    domain.Do(Crt(CONCEPTS.MXCONSTRAINT, 1, [signalClass, signalConstraint]))
+    domain.Do(Crt(CONCEPTS.MXCONSTRAINT, 1, [connectionClass, connectionConstraint]))
 
     #segments must have a reference either to a device or a connection but cannot have both!
     segmentClass = domain.Do(Get(Qry(m2model).Pth(M2PACKAGE.CLASSES)
