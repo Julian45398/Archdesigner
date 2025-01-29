@@ -5,6 +5,7 @@ bin/
 META-INF/
 
 *.aird
+*.eoq
 *.genmodel
 .classpath
 .project
