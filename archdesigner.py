@@ -20,26 +20,11 @@ from eoq3pyecoreutils.saveecorefile import *
 
 from pyecore import *
 
-def routeSignal(domain, m1model, archModel, signal):
-    signalRoute = domain.Do(Crt("*M1OBJECT", 1, ['SignalRoute', m1model, 'signalRoute']))
-    res = domain.Do(Cmp().Set(signalRoute, 'signal', signal[3]).Add(archModel, 'signalRoutes', signalRoute))
-    startEndDevices = domain.Do(Get(Qry(archModel).Pth('taskAssignments*').Zip([
-                        Sel(Pth('task').Equ(signal[1])), #srcDevice
-                        Sel(Pth('task').Equ(signal[2])) #dstDevice
-                    ]).Pth('device')))[0]
 
-
-    # if signal stays in the same device just add a single segment with the device bound
-    if (startEndDevices[0] == startEndDevices[1]):
-        res = domain.Do(Cmp().Crt("*M1OBJECT", 1, ['RouteSegment', m1model, 'deviceSegment'])
-                .Set(His(-1), 'device', startEndDevices[0])
-                .Add(signalRoute, 'segments', His(0)))
-        return
-
-    # else use dijkstras algorithm:
+def dijkstrasAlgorithm(domain, m1model, archModel, startDevice, endDevice, signalRoute):
     unvisited = [device for device in domain.Do(Get(Qry(archModel).Pth('devices*')))]
     visited = []
-    current = startEndDevices[0]
+    current = startDevice 
     nodeData = {node: [2147483647, None] for node in unvisited}
     nodeData[current][0] = 0
     distanceWalked = I32(0)
@@ -64,12 +49,12 @@ def routeSignal(domain, m1model, archModel, signal):
         distanceWalked += smallest
         visited.append(current)
         unvisited.remove(current)
-        if nextNode == startEndDevices[1]:
+        if nextNode == endDevice:
             nodeData[nextNode] = [distanceWalked, current]
             break
         current = nextNode
     #reconstruction of the shortest path:
-    current = startEndDevices[1]
+    current = endDevice 
     while True:
         data = nodeData[current]
         connection = domain.Do(Get(Qry(archModel).Pth('connections*')
@@ -83,7 +68,7 @@ def routeSignal(domain, m1model, archModel, signal):
                             .Set(His(-1), 'connection', connection)
                             .Add(signalRoute, 'segments', His(3)))
         current = data[1]
-        if current == startEndDevices[0]:
+        if current == startDevice:
             #add start device route segment:
             res = domain.Do(Cmp().Crt("*M1OBJECT", 1, ['RouteSegment', m1model, 'deviceSegment'])
                             .Set(His(-1), 'device', current)
@@ -94,6 +79,27 @@ def routeSignal(domain, m1model, archModel, signal):
         Pth('connection').Trm().Pth('name')
     ])))
     print("Route signal segments: ", segments)
+
+
+def routeSignal(domain, m1model, archModel, signal):
+    signalRoute = domain.Do(Crt("*M1OBJECT", 1, ['SignalRoute', m1model, 'signalRoute']))
+    res = domain.Do(Cmp().Set(signalRoute, 'signal', signal[3]).Add(archModel, 'signalRoutes', signalRoute))
+    startEndDevices = domain.Do(Get(Qry(archModel).Pth('taskAssignments*').Zip([
+                        Sel(Pth('task').Equ(signal[1])), #srcDevice
+                        Sel(Pth('task').Equ(signal[2])) #dstDevice
+                    ]).Pth('device')))[0]
+
+
+    # if signal stays in the same device just add a single segment with the device bound
+    if (startEndDevices[0] == startEndDevices[1]):
+        res = domain.Do(Cmp().Crt("*M1OBJECT", 1, ['RouteSegment', m1model, 'deviceSegment'])
+                .Set(His(-1), 'device', startEndDevices[0])
+                .Add(signalRoute, 'segments', His(0)))
+        return
+
+    # else use dijkstras algorithm:
+    dijkstrasAlgorithm(domain, m1model, archModel, startEndDevices[0], startEndDevices[1], signalRoute)
+
 
 def routeSignals(domain, m1model):
     archModels = domain.Do(Get(Qry(m1model).Pth('*MODELROOT').Cls('ArchModel')))
