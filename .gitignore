@@ -6,6 +6,7 @@ META-INF/
 
 *.aird
 *.eoq
+*.archdesigner
 *.genmodel
 .classpath
 .project

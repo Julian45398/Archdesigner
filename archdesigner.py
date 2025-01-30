@@ -16,6 +16,7 @@ from eoq3.serializer import TextSerializer
 from eoq3utils import *
 from eoq3pyecoreutils import *
 from eoq3pyecoreutils.loadecorefile import *
+from eoq3pyecoreutils.saveecorefile import *
 
 from pyecore import *
 
@@ -153,7 +154,7 @@ def verifyModel(domain, m1model):
         print("segment results: ", res)
     print("model verified")
 
-def createUserModel(domain, m2model):
+def createExampleUserModel(domain, m2model):
     m1model = domain.Do(Crt("*M1MODEL", 1, [m2model, "usermodel"]))
     #Instantiating all Objects and connections:
     archModel = domain.Do(Crt("*M1OBJECT", 1, ['ArchModel', m1model, 'archmodel'])) #0
@@ -182,8 +183,11 @@ def createUserModel(domain, m2model):
                                                                             ['Con24', 4, His(6).Idx(1), His(6).Idx(3)],
                                                                             ['Con34', 2, His(6).Idx(2), His(6).Idx(3)]]) #14
                         .Add(archModel, 'connections', His(-2))) #15
-    print("usermodel created...")
+
     return m1model
+
+
+
 
 if "__main__" == __name__:
     metafile = "model/archdesigner.ecore"
@@ -197,12 +201,12 @@ if "__main__" == __name__:
         m2model = domain.Do(Get(Pth('*M2MODEL').Idx(0)))
         addConstraints(domain, m2model)
 
-        m1model = createUserModel(domain, m2model)
+        m1model = createExampleUserModel(domain, m2model)
         print("routing signals...")
         routeSignals(domain, m1model)
 
         verifyModel(domain, m1model)
 
-        SaveEoqFile('model/archdesigner_user.eoq', m1model, domain)
+        SaveEcoreFile('model/example.archdesigner', m1model, domain, metafile=metafile)
     finally:
         CleanUpDomain(domain)
